@@ -1,23 +1,34 @@
-name: Deploy Serverless Automation
+name: Serverless Automation CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - dev
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set environment based on branch
+      run: |
+        if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
+          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+        else
+          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+        fi
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
 
     - name: Terraform Init
-      run: terraform init
       working-directory: terraform
+      run: terraform init
 
     - name: Terraform Apply
-      run: terraform apply -auto-approve
       working-directory: terraform
+      run: terraform apply -auto-approve -var="environment=${ENVIRONMENT}"
